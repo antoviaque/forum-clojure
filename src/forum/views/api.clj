@@ -4,7 +4,8 @@
   (:require [forum.auth :as auth]
             [forum.thread :as thread]
             [forum.message :as message]
-            [forum.json :as json])
+            [forum.json :as json]
+            [noir.response :as response])
   (:use [noir.core :only [defpage pre-route]]
         [hiccup.core :only [html]]))
 
@@ -51,11 +52,15 @@
 (defpage [:get "/api/thread/:id"] {:keys [id]}
   (json/response (thread/get-one id)))
 
-(defpage [:post "/api/thread"] {:keys [title]}
-  (json/response (thread/new title)))
+(defpage [:post "/api/thread"] {}
+  (let [params (json/body-params)]
+   (json/response (thread/new (params "title")))))
 
 ;; Messages ;;
 
-(defpage [:post "/api/message"] {:keys [thread author text]}
-  (json/response (message/new thread author text)))
+(defpage [:post "/api/message"] {}
+  (let [params (json/body-params)]
+    (json/response (message/new (params "thread")
+                                (params "author")
+                                (params "text")))))
 

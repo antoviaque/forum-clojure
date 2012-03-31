@@ -77,7 +77,7 @@
         },
         
         events: {
-            'click input[type=submit]': 'on_submit',
+            'click .new_thread_submit': 'on_submit',
         },
         
         on_submit: function(e) {
@@ -156,7 +156,7 @@
         },
         
         events: {
-            'click input[type=submit]': 'on_submit',
+            'click .new_message_submit': 'on_submit',
         },
         
         on_submit: function(e) {
