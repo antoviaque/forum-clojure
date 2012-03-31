@@ -1,4 +1,4 @@
-(ns forum.views.message)
+(ns forum.message)
 
 ; Messages ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

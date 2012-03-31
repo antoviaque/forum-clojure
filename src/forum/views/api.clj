@@ -1,15 +1,12 @@
 ; Includes ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (ns forum.views.api
-  (:require [forum.views.auth :as auth]
-            [forum.views.thread :as thread]
-            [forum.views.message :as message]
-            [noir.response :as response])
+  (:require [forum.auth :as auth]
+            [forum.thread :as thread]
+            [forum.message :as message]
+            [forum.json :as json])
   (:use [noir.core :only [defpage pre-route]]
-        [hiccup.core :only [html]]
-        [cheshire.custom]))
-
-(add-encoder org.bson.types.ObjectId encode-str)
+        [hiccup.core :only [html]]))
 
 ; Auth ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -24,11 +21,11 @@
 
 (defpage [:get  "/api/auth/login/"
           :post "/api/auth/login/"] {:keys [login password]}
-  (response/json (auth/authenticate login password)))
+  (json/response (auth/authenticate login password)))
 
 (defpage [:get  "/api/auth/logout/"
           :post "/api/auth/logout/"] {}
-  (response/json (auth/logout)))
+  (json/response (auth/logout)))
 
 ;; Static ;;
 
@@ -49,16 +46,16 @@
 ;; Threads ;;
 
 (defpage [:get "/api/thread"] {}
-  (encode (thread/get-all)))
+  (json/response (thread/get-all)))
 
 (defpage [:get "/api/thread/:id"] {:keys [id]}
-  (generate-string (thread/get-one id)))
+  (json/response (thread/get-one id)))
 
 (defpage [:post "/api/thread"] {:keys [title]}
-  (generate-string (thread/new title)))
+  (json/response (thread/new title)))
 
 ;; Messages ;;
 
 (defpage [:post "/api/message"] {:keys [thread author text]}
-  (generate-string (message/new thread author text)))
+  (json/response (message/new thread author text)))
 

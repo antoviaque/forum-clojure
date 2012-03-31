@@ -1,4 +1,4 @@
-(ns forum.views.auth
+(ns forum.auth
   (:require [noir.session :as session]))
 
 ; Auth ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

@@ -1,6 +1,6 @@
-(ns forum.views.thread
+(ns forum.thread
   (:use [noir.core :only [defpage pre-route]]
-        [forum.views.db :only [db]]
+        [forum.db :only [db]]
         [somnium.congomongo]))
 
 ; Threads ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
