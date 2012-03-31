@@ -11,8 +11,8 @@
 
 ; Auth ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;(pre-route [:post "/api/thread*"
-;            :put  "/api/message*"] {} (auth/require-group "admin"))
+(pre-route [:post "/api/thread*"
+            :put  "/api/message*"] {} (auth/require-group "admin"))
 
 
 ; Routes ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
