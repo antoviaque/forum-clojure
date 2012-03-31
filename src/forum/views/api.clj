@@ -11,21 +11,23 @@
 
 ; Auth ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(pre-route [:post   "/api/applications/*"
-            :put    "/api/applications/*"
-            :delete "/api/applications/*"] {} (auth/require-group "admin"))
+;(pre-route [:post "/api/thread*"
+;            :put  "/api/message*"] {} (auth/require-group "admin"))
 
 
 ; Routes ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; Auth ;;
 
-(defpage [:get  "/api/auth/login/"
-          :post "/api/auth/login/"] {:keys [login password]}
-  (json/response (auth/authenticate login password)))
+(defpage [:get "/api/auth"] {}
+  (json/response (auth/credentials)))
 
-(defpage [:get  "/api/auth/logout/"
-          :post "/api/auth/logout/"] {}
+(defpage [:put "/api/auth"] {}
+  (let [params (json/body-params)]
+    (json/response (auth/login (params "login")
+                               (params "password")))))
+
+(defpage [:delete "/api/auth"] {}
   (json/response (auth/logout)))
 
 ;; Static ;;

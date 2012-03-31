@@ -12,6 +12,7 @@
         <div class="shadow left"></div>
         <div class="main">
             <h1>Forum</h1>
+            <div id="auth"></div>
             <div id="content"></div>
         </div>            
         <div class="shadow right"></div>
@@ -24,6 +25,7 @@
             
     <ul class="thread_list"></ul>
 
+    {{#if login}}
     <h2>New Thread</h2>
     <ul>
         <li>Title: <input type="text" class="new_thread_title" /></li>
@@ -32,6 +34,7 @@
         <li><input type="submit" class="new_thread_submit" value="Create thread" /></li>
     </ul>
     <div class="error_message"></div>
+    {{/if}}
 </script>
 
 <script type="text/template" id="tpl_thread_summary">
@@ -59,6 +62,18 @@
         <div class="message_author">By: {{author}}</div>
         <div class="message_text">{{text}}</div>
     </div>
+</script>
+
+<script type="text/template" id="tpl_auth_anonymous">
+    <div>Login:    <input class="login" type="text" /></div>
+    <div>Password: <input class="password" type="password" /></div>
+    <input type="submit" class="login_submit" value="Login" />
+</script>
+
+<script type="text/template" id="tpl_auth_user">
+    <div class="login">Login: {{login}}</div>
+    <div class="group">Group: {{group}}</div>
+    <input type="submit" class="logout_submit" value="Logout" />
 </script>
 
 <!-- JavaScript -->

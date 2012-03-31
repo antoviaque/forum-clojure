@@ -3,13 +3,18 @@
 
 ; Auth ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn authenticate [login password]
+(defn credentials []
+  {:login (session/get :login) 
+   :group (session/get :group)
+   :id 1})
+
+(defn login [login password]
   (if (and (= login "antoviaque") (= password "testpass"))
     (let [group "admin"]
       (session/put! :login login)
       (session/put! :group group)
-      {:result "success" :login login :group group})
-    {:result "failure" :login login}))
+      (assoc (credentials) :result "success"))
+    (assoc (credentials) :result "failure")))
 
 (defn logout []
   (session/clear!)

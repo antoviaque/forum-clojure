@@ -21,6 +21,8 @@
 
     $.forum = {}
     
+    $.forum.auth = null;
+    
     // Models //////////////////////////////////////////////////////////////
         
     $.forum.Message = Backbone.RelationalModel.extend({
@@ -47,6 +49,10 @@
         model: $.forum.Thread,
     })
     
+    $.forum.Auth = Backbone.RelationalModel.extend({
+        url: '/api/auth',
+    });
+
     // Views ///////////////////////////////////////////////////////////////
     
     // Threads list //
@@ -58,6 +64,9 @@
         
         initialize: function(){
             _.bindAll(this, 'render', 'render_thread_summary', 'on_submit', 'on_thread_created', 'on_error');
+            $.forum.credentials.bind('reset', this.render); 
+            $.forum.credentials.bind('change', this.render); 
+            $.forum.credentials.bind('destroy', this.render); 
             this.model.bind('reset', this.render); 
             this.model.bind('change', this.render); 
             this.model.bind('add', this.render_thread_summary); 
@@ -66,7 +75,7 @@
         template: Handlebars.compile($('#tpl_thread_list').html()),
     
         render: function() {
-            $(this.el).html(this.template());
+            $(this.el).html(this.template($.forum.credentials.toJSON()));
             this.model.forEach(this.render_thread_summary);
             return $(this.el).html();
         },
@@ -186,6 +195,53 @@
         },
     });
     
+    // Auth //
+    
+    $.forum.AuthView = Backbone.View.extend({
+        tagName: 'div',
+
+        className: 'auth_view',
+        
+        initialize: function(){
+            _.bindAll(this, 'render', 'on_login', 'on_logout');
+            this.model.bind('change', this.render);
+            this.model.bind('reset', this.render);
+        },
+    
+        template_auth_user: Handlebars.compile($('#tpl_auth_user').html()),
+        template_auth_anonymous: Handlebars.compile($('#tpl_auth_anonymous').html()),
+        
+        events: {
+            'click .login_submit': 'on_login',
+            'click .logout_submit': 'on_logout',
+        },
+        
+        render: function() {
+        	console.log(this.model.get('login'));
+        	if(!this.model.get('login')) {
+            	return $(this.el).html(this.template_auth_anonymous());
+        	} else {
+            	return $(this.el).html(this.template_auth_user(this.model.toJSON()));
+        	}
+        },
+        
+        on_login: function(e) {
+            auth = this.model;
+        	auth.save({login: this.$('.login').val(),
+        			   password: this.$('.password').val()});
+        	app.navigate("/", {trigger: true});
+        },
+        
+        on_logout: function(e) {
+        	console.log(this.model.isNew())
+            this.model.destroy({});
+            $.forum.app.auth();
+        	app.navigate("/", {trigger: true});
+        },
+    });
+    
+    
+    
     // Router ///////////////////////////////////////////////////////////////
     
     $.forum.Router = Backbone.Router.extend({
@@ -207,6 +263,11 @@
             thread.fetch();
         },
         
+        auth: function() {
+        	$.forum.credentials = new $.forum.Auth({});
+        	new $.forum.AuthView({el: $('#auth'), model: $.forum.credentials });
+        	$.forum.credentials.fetch();
+        },
     });
     
     
@@ -215,7 +276,8 @@
     $.forum.app = null;
     
     $.forum.bootstrap = function() {
-        $.forum.app = new $.forum.Router(); 
+        $.forum.app = new $.forum.Router();
+        $.forum.app.auth();
         Backbone.history.start({pushState: true});
     };
 

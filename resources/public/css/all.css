@@ -61,8 +61,21 @@ a {
     margin-right: -21px;
 }
 
+#auth {
+    position: absolute;
+    width: 300px;
+    top: 10px;
+    right: 20px;
+    text-align: right;
+}
+
+#auth input[type=text],
+#auth input[type=password] {
+    width: 200px;
+}
+
 .main {
-	padding: 20px;
+	padding: 50px 20px;
     background-image: url('../img/green_bkg.png');
 }
 
@@ -98,13 +111,13 @@ ul {
     float: right;
 }
 
-input[type=text] {
+#content input[type=text] {
 	padding: 5px;
 	width: 400px;
 	margin: 5px;
 }
 
-textarea {
+#content textarea {
 	width: 400px;
 	height: 200px;
 	margin: 5px;
