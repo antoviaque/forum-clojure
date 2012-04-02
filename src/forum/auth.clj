@@ -3,6 +3,10 @@
 
 ; Auth ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn response-denied [] 
+  {:status 403
+   :body "You don't have the permission to do that."})
+
 (defn credentials []
   {:login (session/get :login) 
    :group (session/get :group)
@@ -20,8 +24,6 @@
   (session/clear!)
   {:result "success" :login nil :group nil})
 
-(defn require-group [authgroup]
-  (when-not (= (session/get :group) authgroup)
-    {:status 403
-     :body "You don't have the permission to do that."}))
+(defn group-member? [authgroup]
+  (= (session/get :group) authgroup))
   

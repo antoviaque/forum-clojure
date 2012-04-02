@@ -5,14 +5,10 @@
             [forum.thread :as thread]
             [forum.message :as message]
             [forum.json :as json]
+            [forum.mail :as mail]
             [noir.response :as response])
-  (:use [noir.core :only [defpage pre-route]]
+  (:use [noir.core :only [defpage pre-route pre-routes]]
         [hiccup.core :only [html]]))
-
-; Auth ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(pre-route [:post "/api/thread*"
-            :put  "/api/message*"] {} (auth/require-group "admin"))
 
 
 ; Routes ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -23,9 +19,9 @@
   (json/response (auth/credentials)))
 
 (defpage [:put "/api/auth"] {}
-  (let [params (json/body-params)]
-    (json/response (auth/login (params "login")
-                               (params "password")))))
+  (let [params (json/body-params)
+        result (auth/login (params "login") (params "password"))]
+    (json/encode result)))
 
 (defpage [:delete "/api/auth"] {}
   (json/response (auth/logout)))
@@ -55,14 +51,18 @@
   (json/response (thread/get-one id)))
 
 (defpage [:post "/api/thread"] {}
-  (let [params (json/body-params)]
-   (json/response (thread/new (params "title")))))
+  (if (not (auth/group-member? "admin"))
+    (auth/response-denied)
+    (let [params (json/body-params)]
+      (json/response (thread/new (params "title"))))))
 
 ;; Messages ;;
 
 (defpage [:post "/api/message"] {}
-  (let [params (json/body-params)]
-    (json/response (message/new (params "thread")
-                                (params "author")
-                                (params "text")))))
+  (if (not (auth/group-member? "admin"))
+    (auth/response-denied)
+    (let [params (json/body-params)]
+      (json/response (message/new (params "thread")
+                                  (params "author")
+                                  (params "text"))))))
 

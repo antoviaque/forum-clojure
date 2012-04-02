@@ -53,6 +53,33 @@
         url: '/api/auth',
     });
 
+    // Viewer ///////////////////////////////////////////////////////////////
+    
+    // Allows to cleanly switch between views displayed in a specific area of the 
+    // screen, as cleanly removing a view requires removing the view's DOM element
+    $.forum.Viewer = function(dom_element) {
+    	this.current_view = null;
+    	this.dom_element = dom_element;
+    	
+    	this.show = function(view) {
+    		if(this.current_view) {
+    			this.current_view.close();
+    		}
+    		this.current_view = view;
+    		this.current_view.render();
+    		console.log(this.dom_element);
+    		$(this.dom_element).html(this.current_view.el);
+    	}
+    }
+    
+    Backbone.View.prototype.close = function() {
+        this.remove();
+        this.unbind();
+        if(this.on_close) {
+            this.on_close();
+        }
+    }
+    
     // Views ///////////////////////////////////////////////////////////////
     
     // Threads list //
@@ -62,14 +89,24 @@
 
         className: 'thread_list_view',
         
-        initialize: function(){
-            _.bindAll(this, 'render', 'render_thread_summary', 'on_submit', 'on_thread_created', 'on_error');
+        initialize: function() {
+            _.bindAll(this, 'render', 'render_thread_summary', 'on_submit', 'on_thread_created', 
+            		         'on_error', 'on_close');
             $.forum.credentials.bind('reset', this.render); 
             $.forum.credentials.bind('change', this.render); 
             $.forum.credentials.bind('destroy', this.render); 
             this.model.bind('reset', this.render); 
             this.model.bind('change', this.render); 
             this.model.bind('add', this.render_thread_summary); 
+        },
+        
+        on_close: function() {
+            $.forum.credentials.unbind('reset', this.render); 
+            $.forum.credentials.unbind('change', this.render); 
+            $.forum.credentials.unbind('destroy', this.render); 
+            this.model.unbind('reset', this.render); 
+            this.model.unbind('change', this.render); 
+            this.model.unbind('add', this.render_thread_summary);
         },
     
         template: Handlebars.compile($('#tpl_thread_list').html()),
@@ -122,8 +159,12 @@
         className: 'thread_summary_view',
         
         initialize: function(){
-            _.bindAll(this, 'render', 'on_click');
+            _.bindAll(this, 'render', 'on_click', 'on_close');
             this.model.bind('change', this.render);
+        },
+
+        on_close: function() {
+            this.model.unbind('change', this.render);
         },
     
         template: Handlebars.compile($('#tpl_thread_summary').html()),
@@ -147,10 +188,16 @@
         className: 'thread_view',
         
         initialize: function(){
-            _.bindAll(this, 'render', 'render_message', 'on_submit');
+            _.bindAll(this, 'render', 'render_message', 'on_submit', 'on_close');
             this.model.bind('change', this.render);
             this.model.bind('reset', this.render);
             this.model.bind('add:messages', this.render_message); 
+        },
+
+        on_close: function() {
+            this.model.unbind('change', this.render);
+            this.model.unbind('reset', this.render);
+            this.model.unbind('add:messages', this.render_message);
         },
     
         template: Handlebars.compile($('#tpl_thread').html()),
@@ -183,9 +230,13 @@
 
         className: 'message_view',
         
-        initialize: function(){
-            _.bindAll(this, 'render');
+        initialize: function() {
+            _.bindAll(this, 'render', 'on_close');
             this.model.bind('change', this.render);
+        },
+        
+        on_close: function() {
+            this.model.unbind('change', this.render);
         },
     
         template: Handlebars.compile($('#tpl_message').html()),
@@ -202,10 +253,15 @@
 
         className: 'auth_view',
         
-        initialize: function(){
-            _.bindAll(this, 'render', 'on_login', 'on_logout');
+        initialize: function() {
+            _.bindAll(this, 'render', 'on_login', 'on_logout', 'on_keypress', 'on_close');
             this.model.bind('change', this.render);
             this.model.bind('reset', this.render);
+        },
+        
+        on_close: function() {
+            this.model.unbind('change', this.render);
+            this.model.unbind('reset', this.render);
         },
     
         template_auth_user: Handlebars.compile($('#tpl_auth_user').html()),
@@ -214,10 +270,11 @@
         events: {
             'click .login_submit': 'on_login',
             'click .logout_submit': 'on_logout',
+            'keypress input.login': 'on_keypress',
+            'keypress input.password': 'on_keypress',
         },
         
         render: function() {
-        	console.log(this.model.get('login'));
         	if(!this.model.get('login')) {
             	return $(this.el).html(this.template_auth_anonymous());
         	} else {
@@ -225,22 +282,30 @@
         	}
         },
         
+        on_keypress: function(e) {
+            if(e.keyCode == 13) { // <ENTER>
+            	this.on_login(e);
+            }
+         },
+        
         on_login: function(e) {
             auth = this.model;
         	auth.save({login: this.$('.login').val(),
-        			   password: this.$('.password').val()});
-        	app.navigate("/", {trigger: true});
+        			   password: this.$('.password').val()},
+        			  {success: this.on_login_response});
+        },
+        
+        on_login_failed: function() {
+        	console.log('error'); // XXX FIXME
+        	this.$('.login_info_message').html("Login failed");
         },
         
         on_logout: function(e) {
-        	console.log(this.model.isNew())
-            this.model.destroy({});
-            $.forum.app.auth();
-        	app.navigate("/", {trigger: true});
+        	this.model.destroy({});
+        	$(this.el).children().remove();
+        	$.forum.app.auth_refresh();
         },
     });
-    
-    
     
     // Router ///////////////////////////////////////////////////////////////
     
@@ -248,25 +313,42 @@
         routes: {
             "": "show_thread_list",
             "thread/:_id/": "show_thread",
+            "refresh": "refresh",
+        },
+        
+        initialize: function(options) {
+        	this.viewers = { content: new $.forum.Viewer($('#content')),
+        					  auth: new $.forum.Viewer($('#auth'))};
         },
     
         show_thread_list: function() {
             var thread_collection = new $.forum.ThreadCollection();
-            var thread_list_view = new $.forum.ThreadListView({el: $('#content'), 
-                                                                model: thread_collection });
+            var thread_list_view = new $.forum.ThreadListView({ model: thread_collection });
             thread_collection.fetch();
+            this.viewers.content.show(thread_list_view);
         },
         
         show_thread: function(_id) {
             var thread = new $.forum.Thread({_id: _id});
-            var thread_view = new $.forum.ThreadView({el: $('#content'), model: thread});
+            var thread_view = new $.forum.ThreadView({ model: thread });
             thread.fetch();
+            this.viewers.content.show(thread_view);
         },
         
         auth: function() {
         	$.forum.credentials = new $.forum.Auth({});
-        	new $.forum.AuthView({el: $('#auth'), model: $.forum.credentials });
+        	var auth_view = new $.forum.AuthView({ model: $.forum.credentials });
         	$.forum.credentials.fetch();
+            this.viewers.auth.show(auth_view);
+        },
+        
+        auth_refresh: function() {
+            this.auth();
+            this.navigate("refresh", {trigger: true, replace: true});
+        },
+        
+        refresh: function() {
+        	this.navigate("", {trigger: true});
         },
     });
     

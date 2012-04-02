@@ -10,8 +10,11 @@
 
 ; JSON Conversion ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn encode [obj]
+  (json/encode obj))
+
 (defn response [db-result]
-  (let [json-str (json/encode db-result)]
+  (let [json-str (encode db-result)]
     (response/content-type "application/json" json-str)))
 
 (defn body-params []
